@@ -89,20 +89,8 @@ namespace raylibRaycastFPSnew
             {
                 lookAngleInRadians += turningSpeedInRadians * Raylib.GetFrameTime();
             }
-            lookAngleInRadians = FixAngle(lookAngleInRadians);
+            lookAngleInRadians = Geometry.FixAngle(lookAngleInRadians);
         }
 
-        private float FixAngle(float angleInRadians)
-        {
-            if (angleInRadians > 6.28318530f) // 6.28318530f = PI * 2
-            {
-                angleInRadians = 0;
-            }
-            if (angleInRadians < 0)
-            {
-                angleInRadians = 6.28318530f; // 6.28318530f = PI * 2
-            }
-            return angleInRadians;
-        }
     }
 }

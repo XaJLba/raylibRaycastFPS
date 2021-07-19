@@ -7,87 +7,92 @@ namespace raylibRaycastFPSnew
 {
     class Renderer
     {
-        public void RenderLevel(Player player, Level level, Window window, int stripWidth, Color ceilingColor, Color floorColor) // TODO: abstraction
+        public void RenderLevel(Player player, Level level, Window window, int stripWidth, Color ceilingColor, Color floorColor)
         {
-            // draw ceiling and floor
-            Raylib.DrawRectangle(0, 0, window.width, window.height / 2, ceilingColor);
-            Raylib.DrawRectangle(0, window.height / 2, window.width, window.height / 2, floorColor);
+            DrawCeilingAndFloor(window, ceilingColor, floorColor);
 
             Vector2 playerCenter = new Vector2(player.rectangle.x + player.rectangle.width / 2, player.rectangle.y + player.rectangle.height / 2);
-
-            Vector2 rayStartPosition = playerCenter;
-            float rayDistance = 1000f;
-
+            
             float rayAngleStepInRadians = stripWidth * player.fovInRadians / window.width;
             int amountOfTimesToIncreaseRayAngle = (int)(player.fovInRadians / rayAngleStepInRadians);
-            float initialRayAngleInRadians = player.lookAngleInRadians - player.fovInRadians / 2;
-            float rayAngleInRadians;
 
+            // foreach ray angle
             for (int i = 0; i < amountOfTimesToIncreaseRayAngle; i++)
             {
-                // defining ray direction
-                rayAngleInRadians = initialRayAngleInRadians + rayAngleStepInRadians * i;
-                Vector2 rayDirection = new Vector2(MathF.Cos(rayAngleInRadians), MathF.Sin(rayAngleInRadians));
+                // casting the ray
+                float rayAngleInRadians = player.lookAngleInRadians - player.fovInRadians / 2 + rayAngleStepInRadians * i;
+                LineSegment ray = CastRay(playerCenter, Geometry.GetDirectionFromAngle(rayAngleInRadians));
 
-                // casting ray
-                Vector2 rayNewPosition = rayStartPosition + rayDirection * rayDistance;
-                LineSegment ray = new LineSegment(rayStartPosition, rayNewPosition);
+                // getting ray intersection info
+                Vector2 closestIntersectionPoint;
+                Wall closestIntersectedWall;
+                (closestIntersectionPoint, closestIntersectedWall) = GetRayIntersectionInfo(level, ray);
+                float distanceToClosestIntersectionPoint = MathF.Sqrt(GetPointToPointSquareDistance(ray.startPosition, closestIntersectionPoint));
 
-                // finding all intersection points between ray and walls and walls that ray intersected
-                Dictionary<Vector2, Wall> rayIntersectionPointsAndIntersectedWalls = new Dictionary<Vector2, Wall>();
-                foreach (Wall wall in level.walls)
-                {
-                    var intersectionInfo = GetLineLineIntersection(ray, wall.lineSegment);
-                    if (intersectionInfo.Item1)
-                    {
-                        rayIntersectionPointsAndIntersectedWalls.Add(intersectionInfo.Item2, wall); // TODO: fix argument exception that sometimes appears
-                    }
-                }
-
-                // finding the closest intersection point if intersection points exist
-                if (rayIntersectionPointsAndIntersectedWalls.Count > 0)
-                {
-                    float minDistanceToPoint = float.MaxValue;
-                    Vector2 closestPoint = default;
-                    Wall closestWall = default;
-
-                    foreach (var pointWallPair in rayIntersectionPointsAndIntersectedWalls)
-                    {
-                        float squaredDistanceToPoint = GetPointToPointSquareDistance(rayStartPosition, pointWallPair.Key);
-                        if (squaredDistanceToPoint < minDistanceToPoint)
-                        {
-                            minDistanceToPoint = squaredDistanceToPoint;
-                            closestPoint = pointWallPair.Key;
-                            closestWall = pointWallPair.Value;
-                        }
-                    }
-                    float distanceToClosestPoint = MathF.Sqrt(GetPointToPointSquareDistance(rayStartPosition, closestPoint));
-                    
-                    // fix fisheye effect
-                    float angleDifferenceInRadians = player.lookAngleInRadians - rayAngleInRadians;
-                    if (angleDifferenceInRadians < 0)
-                    {
-                        angleDifferenceInRadians = 6.28318530f; // 6.28318530f = PI * 2
-                    }
-                    if (angleDifferenceInRadians > 6.28318530f) // 6.28318530f = PI * 2
-                    {
-                        angleDifferenceInRadians = 0;
-                    }
-                    distanceToClosestPoint *= MathF.Cos(angleDifferenceInRadians);
-
-                    // defining the strip to draw
-                    int stripHeight = (int)(window.height / distanceToClosestPoint * closestWall.height);
-                    int stripX = i * stripWidth;
-                    int stripY = (window.height - stripHeight) / 2;
-                    Color stripColor = closestWall.color;
-                    // drawing the strip
-                    Raylib.DrawRectangle(stripX, stripY, stripWidth, stripHeight, stripColor);
-                }
+                // drawing wall parts (strips)
+                DrawWallPart(window, stripWidth, i, closestIntersectedWall, distanceToClosestIntersectionPoint);
             }
 
         }
 
-        (bool, Vector2) GetLineLineIntersection(LineSegment line1, LineSegment line2)
+        private void DrawWallPart(Window window, int stripWidth, int i, Wall closestIntersectedWall, float distanceToClosestIntersectionPoint)
+        {
+            int stripHeight = (int)(window.height / distanceToClosestIntersectionPoint * closestIntersectedWall.height);
+            int stripX = i * stripWidth;
+            int stripY = (window.height - stripHeight) / 2;
+            Color stripColor = closestIntersectedWall.color;
+            Raylib.DrawRectangle(stripX, stripY, stripWidth, stripHeight, stripColor);
+        }
+
+        private void DrawCeilingAndFloor(Window window, Color ceilingColor, Color floorColor)
+        {
+            // draw ceiling and floor
+            Raylib.DrawRectangle(0, 0, window.width, window.height / 2, ceilingColor);
+            Raylib.DrawRectangle(0, window.height / 2, window.width, window.height / 2, floorColor);
+        }
+
+        private (Vector2, Wall) GetRayIntersectionInfo(Level level, LineSegment ray)
+        {
+            // finding all intersection points between ray and walls and walls that ray intersected
+            Dictionary<Vector2, Wall> rayIntersectionPointsAndIntersectedWalls = new Dictionary<Vector2, Wall>();
+            foreach (Wall wall in level.walls)
+            {
+                var intersectionInfo = GetLineLineIntersection(ray, wall.lineSegment);
+                if (intersectionInfo.Item1)
+                {
+                    rayIntersectionPointsAndIntersectedWalls.Add(intersectionInfo.Item2, wall); // TODO: fix argument exception that sometimes appears
+                }
+            }
+
+            // finding the closest intersection point and closest intersected wall if intersection points exist
+            Vector2 closestPoint = default;
+            Wall closestWall = default;
+            if (rayIntersectionPointsAndIntersectedWalls.Count > 0)
+            {
+                float minDistanceToPoint = float.MaxValue;
+
+                foreach (var pointWallPair in rayIntersectionPointsAndIntersectedWalls)
+                {
+                    float squaredDistanceToPoint = GetPointToPointSquareDistance(ray.startPosition, pointWallPair.Key);
+                    if (squaredDistanceToPoint < minDistanceToPoint)
+                    {
+                        minDistanceToPoint = squaredDistanceToPoint;
+                        closestPoint = pointWallPair.Key;
+                        closestWall = pointWallPair.Value;
+                    }
+                }
+            }
+            return (closestPoint, closestWall);
+        }
+
+        private LineSegment CastRay(Vector2 rayStartPosition, Vector2 rayDirection)
+        {
+            Vector2 rayNewPosition = rayStartPosition + rayDirection * 1000f;
+            LineSegment ray = new LineSegment(rayStartPosition, rayNewPosition);
+            return ray;
+        }
+
+        private (bool, Vector2) GetLineLineIntersection(LineSegment line1, LineSegment line2)
         {
             float x1 = line1.startPosition.X;
             float y1 = line1.startPosition.Y;
@@ -122,7 +127,7 @@ namespace raylibRaycastFPSnew
             }
         }
 
-        float GetPointToPointSquareDistance(Vector2 p1, Vector2 p2)
+        private float GetPointToPointSquareDistance(Vector2 p1, Vector2 p2)
         {
             float dx = p1.X - p2.X;
             float dy = p1.Y - p2.Y;
