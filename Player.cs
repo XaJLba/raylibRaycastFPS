@@ -7,18 +7,18 @@ namespace raylibRaycastFPSnew
     class Player : Entity
     {
         public float walkingSpeed { get; private set; }
-        public float turningSpeedInRadians { get; private set; }
-        public float lookAngleInRadians { get; private set; }
-        public float fovInRadians { get; }
+        public float turningSpeed { get; private set; }
+        public float lookAngle { get; private set; }
+        public float fov { get; }
         private float _walkingSprintFactor { get; }
         private float _turningSprintFactor { get; }
-        public Player(Vector2 position, float sideLength, float walkingSpeed, float turningSpeedInRadians, float fovInRadians, float walkingSprintFactor, float turningSprintFactor)
+        public Player(Vector2 position, float sideLength, float walkingSpeed, float turningSpeed, float fov, float walkingSprintFactor, float turningSprintFactor)
         {
             rectangle = new Rectangle(position.X, position.Y, sideLength, sideLength);
             this.walkingSpeed = walkingSpeed;
-            this.turningSpeedInRadians = turningSpeedInRadians;
-            lookAngleInRadians = 0f;
-            this.fovInRadians = fovInRadians;
+            this.turningSpeed = turningSpeed;
+            lookAngle = 0f;
+            this.fov = fov;
             _walkingSprintFactor = walkingSprintFactor;
             _turningSprintFactor = turningSprintFactor;
         }
@@ -27,12 +27,12 @@ namespace raylibRaycastFPSnew
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT_SHIFT))
             {
                 walkingSpeed *= _walkingSprintFactor;
-                turningSpeedInRadians *= _turningSprintFactor;
+                turningSpeed *= _turningSprintFactor;
             }
             if (Raylib.IsKeyReleased(KeyboardKey.KEY_LEFT_SHIFT))
             {
                 walkingSpeed /= _walkingSprintFactor;
-                turningSpeedInRadians /= _turningSprintFactor;
+                turningSpeed /= _turningSprintFactor;
             }
         }
 
@@ -42,18 +42,19 @@ namespace raylibRaycastFPSnew
 
             if (Raylib.IsKeyDown(KeyboardKey.KEY_W))
             {
-                direction = new Vector2(MathF.Cos(lookAngleInRadians), MathF.Sin(lookAngleInRadians));
+                direction = new Vector2(MathF.Cos(lookAngle), MathF.Sin(lookAngle));
             }
             else if (Raylib.IsKeyDown(KeyboardKey.KEY_S))
             {
-                direction = new Vector2(-MathF.Cos(lookAngleInRadians), -MathF.Sin(lookAngleInRadians));
+                direction = new Vector2(-MathF.Cos(lookAngle), -MathF.Sin(lookAngle));
             }
 
             else
             {
-                return;
+                return; // not interested in other key presses
             }
 
+            // update position
             rectangle = new Rectangle(rectangle.x + walkingSpeed * direction.X * Raylib.GetFrameTime(), rectangle.y + walkingSpeed * direction.Y * Raylib.GetFrameTime(), rectangle.width, rectangle.width);
         }
 
@@ -63,18 +64,19 @@ namespace raylibRaycastFPSnew
 
             if (Raylib.IsKeyDown(KeyboardKey.KEY_D))
             {
-                direction = new Vector2(-MathF.Sin(lookAngleInRadians), MathF.Cos(lookAngleInRadians));
+                direction = new Vector2(-MathF.Sin(lookAngle), MathF.Cos(lookAngle));
             }
             else if (Raylib.IsKeyDown(KeyboardKey.KEY_A))
             {
-                direction = new Vector2(MathF.Sin(lookAngleInRadians), -MathF.Cos(lookAngleInRadians));
+                direction = new Vector2(MathF.Sin(lookAngle), -MathF.Cos(lookAngle));
             }
 
             else
             {
-                return;
+                return; // not interested in other key presses
             }
 
+            // update position
             rectangle = new Rectangle(rectangle.x + walkingSpeed * direction.X * Raylib.GetFrameTime(), rectangle.y + walkingSpeed * direction.Y * Raylib.GetFrameTime(), rectangle.width, rectangle.width);
 
         }
@@ -83,13 +85,13 @@ namespace raylibRaycastFPSnew
         {
             if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT))
             {
-                lookAngleInRadians -= turningSpeedInRadians * Raylib.GetFrameTime();
+                lookAngle -= turningSpeed * Raylib.GetFrameTime();
             }
             if (Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT))
             {
-                lookAngleInRadians += turningSpeedInRadians * Raylib.GetFrameTime();
+                lookAngle += turningSpeed * Raylib.GetFrameTime();
             }
-            lookAngleInRadians = Geometry.FixAngle(lookAngleInRadians);
+            lookAngle = Trigonometry.FixAngle(lookAngle);
         }
 
     }

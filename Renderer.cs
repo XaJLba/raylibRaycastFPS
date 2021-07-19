@@ -11,26 +11,19 @@ namespace raylibRaycastFPSnew
         {
             DrawCeilingAndFloor(window, ceilingColor, floorColor);
 
-            Vector2 playerCenter = new Vector2(player.rectangle.x + player.rectangle.width / 2, player.rectangle.y + player.rectangle.height / 2);
-            
-            float rayAngleStepInRadians = stripWidth * player.fovInRadians / window.width;
-            int amountOfTimesToIncreaseRayAngle = (int)(player.fovInRadians / rayAngleStepInRadians);
+            float rayAngleStep = stripWidth * player.fov / window.width;
+            int amountOfTimesToIncreaseRayAngle = (int)(player.fov / rayAngleStep);
 
-            float initialRayAngleInRadians = player.lookAngleInRadians - player.fovInRadians / 2;
-            // foreach ray angle
             for (int i = 0; i < amountOfTimesToIncreaseRayAngle; i++)
             {
-                // casting the ray
-                float rayAngleInRadians = initialRayAngleInRadians + rayAngleStepInRadians * i;
-                LineSegment ray = CastRay(playerCenter, Geometry.GetDirectionFromAngle(rayAngleInRadians));
+                float rayAngle = player.lookAngle - player.fov / 2 + rayAngleStep * i;
+                LineSegment ray = CastRay(Trigonometry.GetRectangleCenter(player.rectangle), Trigonometry.GetDirectionFromAngle(rayAngle));
 
-                // getting ray intersection info
                 Vector2 closestIntersectionPoint;
                 Wall closestIntersectedWall;
                 (closestIntersectionPoint, closestIntersectedWall) = GetRayIntersectionInfo(level, ray);
-                float distanceToClosestIntersectionPoint = MathF.Sqrt(GetPointToPointSquareDistance(ray.startPosition, closestIntersectionPoint));
-
-                // drawing wall parts (strips)
+                
+                float distanceToClosestIntersectionPoint = Trigonometry.GetPointToPointRealDistance(ray.startPosition, closestIntersectionPoint);
                 DrawWallPart(window, stripWidth, i, closestIntersectedWall, distanceToClosestIntersectionPoint);
             }
 
@@ -47,14 +40,13 @@ namespace raylibRaycastFPSnew
 
         private void DrawCeilingAndFloor(Window window, Color ceilingColor, Color floorColor)
         {
-            // draw ceiling and floor
             Raylib.DrawRectangle(0, 0, window.width, window.height / 2, ceilingColor);
             Raylib.DrawRectangle(0, window.height / 2, window.width, window.height / 2, floorColor);
         }
 
         private (Vector2, Wall) GetRayIntersectionInfo(Level level, LineSegment ray)
         {
-            // finding all intersection points between ray and walls and walls that ray intersected
+            // finding (all intersection points between ray and walls) and (walls that ray intersected)
             Dictionary<Vector2, Wall> rayIntersectionPointsAndIntersectedWalls = new Dictionary<Vector2, Wall>();
             foreach (Wall wall in level.walls)
             {
@@ -74,7 +66,7 @@ namespace raylibRaycastFPSnew
 
                 foreach (var pointWallPair in rayIntersectionPointsAndIntersectedWalls)
                 {
-                    float squaredDistanceToPoint = GetPointToPointSquareDistance(ray.startPosition, pointWallPair.Key);
+                    float squaredDistanceToPoint = Trigonometry.GetPointToPointSquareDistance(ray.startPosition, pointWallPair.Key);
                     if (squaredDistanceToPoint < minDistanceToPoint)
                     {
                         minDistanceToPoint = squaredDistanceToPoint;
@@ -88,13 +80,14 @@ namespace raylibRaycastFPSnew
 
         private LineSegment CastRay(Vector2 rayStartPosition, Vector2 rayDirection)
         {
-            Vector2 rayNewPosition = rayStartPosition + rayDirection * 1000f;
-            LineSegment ray = new LineSegment(rayStartPosition, rayNewPosition);
-            return ray;
+            GetLineLineIntersection(new LineSegment(new Vector2(), new Vector2()), new LineSegment(new Vector2(), new Vector2()));
+            return new LineSegment(rayStartPosition, rayStartPosition + rayDirection * 3000f);
         }
 
         private (bool, Vector2) GetLineLineIntersection(LineSegment line1, LineSegment line2)
         {
+            // formula translating from wikipedia
+
             float x1 = line1.startPosition.X;
             float y1 = line1.startPosition.Y;
             float x2 = line1.endPosition.X;
@@ -105,18 +98,19 @@ namespace raylibRaycastFPSnew
             float x4 = line2.endPosition.X;
             float y4 = line2.endPosition.Y;
 
-            float D = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            float Denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
 
-            if (D == 0)
+            if (Denominator == 0) // line segments are parallel
             {
-                return (false, new Vector2());
+                return (false, new Vector2()); 
             }
 
-            float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / D;
-            float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / D;
+            float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / Denominator;
+            float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / Denominator;
 
             if ((t >= 0 && t <= 1) && (u >= 0 && u <= 1))
             {
+                // there is an intersectionz`
                 float intersectionX = x1 + t * (x2 - x1);
                 float intersectionY = y1 + t * (y2 - y1);
                 Vector2 intersection = new Vector2(intersectionX, intersectionY);
@@ -124,15 +118,10 @@ namespace raylibRaycastFPSnew
             }
             else
             {
-                return (false, new Vector2());
+                return (false, new Vector2()); // no intersection
             }
         }
 
-        private float GetPointToPointSquareDistance(Vector2 p1, Vector2 p2)
-        {
-            float dx = p1.X - p2.X;
-            float dy = p1.Y - p2.Y;
-            return dx * dx + dy * dy;
-        }
+
     }
 }

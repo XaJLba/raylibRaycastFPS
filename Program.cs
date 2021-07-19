@@ -19,14 +19,14 @@ namespace raylibRaycastFPSnew
             const float PlayerSideLength = 20f;
             const float PlayerWalkingSpeed = 200f;
             const float PlayerTurningSpeed = 1f;
-            const float PlayerFovInRadians = MathF.PI / 3;
+            const float PlayerFov = MathF.PI / 3;
             const float PlayerWalkingSprintFactor = 1.6f;
             const float PlayerTurningSprintFactor = 1.8f;
 
             const int StripWidth = 2;
 
             Window window = new Window(ScreenWidth, ScreenHeight, Caption, Fps);
-            Player player = new Player(new Vector2(100, 100), PlayerSideLength, PlayerWalkingSpeed, PlayerTurningSpeed, PlayerFovInRadians, PlayerWalkingSprintFactor, PlayerTurningSprintFactor);
+            Player player = new Player(new Vector2(100, 100), PlayerSideLength, PlayerWalkingSpeed, PlayerTurningSpeed, PlayerFov, PlayerWalkingSprintFactor, PlayerTurningSprintFactor);
             Renderer renderer = new Renderer();
 
             Level level = new Level(new Wall[5]
