@@ -16,11 +16,12 @@ namespace raylibRaycastFPSnew
             float rayAngleStepInRadians = stripWidth * player.fovInRadians / window.width;
             int amountOfTimesToIncreaseRayAngle = (int)(player.fovInRadians / rayAngleStepInRadians);
 
+            float initialRayAngleInRadians = player.lookAngleInRadians - player.fovInRadians / 2;
             // foreach ray angle
             for (int i = 0; i < amountOfTimesToIncreaseRayAngle; i++)
             {
                 // casting the ray
-                float rayAngleInRadians = player.lookAngleInRadians - player.fovInRadians / 2 + rayAngleStepInRadians * i;
+                float rayAngleInRadians = initialRayAngleInRadians + rayAngleStepInRadians * i;
                 LineSegment ray = CastRay(playerCenter, Geometry.GetDirectionFromAngle(rayAngleInRadians));
 
                 // getting ray intersection info

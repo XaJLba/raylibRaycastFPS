@@ -61,12 +61,12 @@ namespace raylibRaycastFPSnew
 
         static void Debug(Level level, Player player)
         {
-/*            foreach (Wall wall in level.Walls)
+/*            foreach (Wall wall in level.walls)
             {
-                Raylib.DrawLineV(wall.LineSegment.StartPosition, wall.LineSegment.EndPosition, Color.GREEN);
+                Raylib.DrawLineV(wall.lineSegment.startPosition, wall.lineSegment.endPosition, wall.color);
             }
             Raylib.DrawRectangleRec(player.rectangle, Color.MAGENTA);
-            Raylib.DrawText($"look angle in radians: {player.LookAngleInRadians}", 0, 20, 20, Color.GREEN);*/
+            Raylib.DrawText($"look angle in radians: {player.lookAngleInRadians}", 0, 20, 20, Color.GREEN);*/
             Raylib.DrawFPS(0, 0);
         }
     }

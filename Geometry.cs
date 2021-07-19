@@ -22,7 +22,7 @@ namespace raylibRaycastFPSnew
 
         public static Vector2 GetDirectionFromAngle(float angleInRadians)
         {
-            return new Vector2(MathF.Sin(angleInRadians), MathF.Cos(angleInRadians));
+            return new Vector2(MathF.Cos(angleInRadians), MathF.Sin(angleInRadians));
         }
     }
 }
